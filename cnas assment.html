@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Cryptography Toolkit</title>
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #eef2f7;
+            margin: 0;
+        }
+
+        h1 {
+            text-align: center;
+            background: #1f2937;
+            color: white;
+            padding: 15px;
+            margin: 0;
+        }
+
+        .wrapper {
+            max-width: 1100px;
+            margin: 30px auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .box {
+            background: white;
+            padding: 20px;
+            width: 320px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        textarea,
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 8px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 6px;
+            background-color: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        .output {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #111;
+            word-wrap: break-word;
+            text-align: left;
+            line-height: 1.6;
+            font-family: monospace;
+        }
+
+        table {
+            margin: 15px auto;
+            border-collapse: collapse;
+        }
+
+        td {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🔐 Cryptography Toolkit</h1>
+
+    <div class="wrapper">
+
+        <!-- MONO -->
+        <div class="box">
+            <h2>Monoalphabetic Cipher</h2>
+
+            <textarea id="monoInput" placeholder="Enter text"></textarea>
+            <input type="text" id="monoKey" placeholder="Enter 26-letter key">
+
+            <button onclick="monoEncrypt()">Encrypt</button>
+            <button onclick="monoDecrypt()">Decrypt</button>
+
+            <p class="output" id="monoOutput"></p>
+        </div>
+
+        <!-- RAIL -->
+        <div class="box">
+            <h2>Rail Fence Cipher</h2>
+
+            <textarea id="railInput" placeholder="Enter text"></textarea>
+            <input type="number" id="rails" placeholder="Enter rails">
+
+            <button onclick="railEncrypt()">Encrypt</button>
+            <button onclick="railDecrypt()">Decrypt</button>
+
+            <p class="output" id="railOutput"></p>
+            <div id="visual"></div>
+        </div>
+
+        <!-- DIFFIE HELLMAN -->
+        <div class="box">
+            <h2>Diffie-Hellman MitM</h2>
+
+            <input id="q" value="23" placeholder="q">
+            <input id="alpha" value="5" placeholder="α">
+            <input id="xa" value="6" placeholder="XA">
+            <input id="xb" value="15" placeholder="XB">
+            <input id="xd1" value="13" placeholder="XD1">
+            <input id="xd2" value="9" placeholder="XD2">
+
+            <button onclick="calculate()">Calculate</button>
+
+            <div class="output" id="dhOutput"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // ================= MONO =================
+        const plain = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        function validateKey(key) {
+            key = key.toUpperCase();
+            if (key.length !== 26) return alert("Key must be 26 letters"), false;
+            if (new Set(key).size !== 26) return alert("Unique letters only"), false;
+            return true;
+        }
+
+        function monoEncrypt() {
+            let text = monoInput.value.toUpperCase();
+            let key = monoKey.value.toUpperCase();
+            if (!validateKey(key)) return;
+
+            let result = "";
+            for (let c of text)
+                result += plain.includes(c) ? key[plain.indexOf(c)] : c;
+
+            monoOutput.innerText = result;
+        }
+
+        function monoDecrypt() {
+            let text = monoInput.value.toUpperCase();
+            let key = monoKey.value.toUpperCase();
+            if (!validateKey(key)) return;
+
+            let result = "";
+            for (let c of text)
+                result += key.includes(c) ? plain[key.indexOf(c)] : c;
+
+            monoOutput.innerText = result;
+        }
+
+        // ================= RAIL =================
+        function createMatrix(r, len) {
+            return Array.from({ length: r }, () => Array(len).fill(""));
+        }
+
+        function displayMatrix(m) {
+            let html = "<table>";
+            for (let row of m) {
+                html += "<tr>";
+                for (let c of row) html += "<td>" + (c || "") + "</td>";
+                html += "</tr>";
+            }
+            html += "</table>";
+            visual.innerHTML = html;
+        }
+
+        function railEncrypt() {
+            let text = railInput.value;
+            let r = parseInt(rails.value);
+            if (r < 2) return alert("Rails >=2");
+
+            let m = createMatrix(r, text.length);
+            let row = 0, down = true;
+
+            for (let i = 0; i < text.length; i++) {
+                m[row][i] = text[i];
+                if (row === 0) down = true;
+                else if (row === r - 1) down = false;
+                row += down ? 1 : -1;
+            }
+
+            let res = "";
+            for (let i = 0; i < r; i++)
+                for (let j = 0; j < text.length; j++)
+                    if (m[i][j]) res += m[i][j];
+
+            railOutput.innerText = res;
+            displayMatrix(m);
+        }
+
+        function railDecrypt() {
+            let text = railInput.value;
+            let r = parseInt(rails.value);
+            if (r < 2) return alert("Rails >=2");
+
+            let m = createMatrix(r, text.length);
+            let row = 0, down = true;
+
+            for (let i = 0; i < text.length; i++) {
+                m[row][i] = "*";
+                if (row === 0) down = true;
+                else if (row === r - 1) down = false;
+                row += down ? 1 : -1;
+            }
+
+            let idx = 0;
+            for (let i = 0; i < r; i++)
+                for (let j = 0; j < text.length; j++)
+                    if (m[i][j] == "*") m[i][j] = text[idx++];
+
+            let res = "";
+            row = 0; down = true;
+            for (let i = 0; i < text.length; i++) {
+                res += m[row][i];
+                if (row === 0) down = true;
+                else if (row === r - 1) down = false;
+                row += down ? 1 : -1;
+            }
+
+            railOutput.innerText = res;
+            displayMatrix(m);
+        }
+
+        // ================= DIFFIE HELLMAN =================
+        function modExp(b, e, m) {
+            let r = 1; b %= m;
+            while (e > 0) {
+                if (e % 2) r = (r * b) % m;
+                e = Math.floor(e / 2);
+                b = (b * b) % m;
+            }
+            return r;
+        }
+
+        function calculate() {
+            let qv = +q.value, a = +alpha.value;
+            let xaV = +xa.value, xbV = +xb.value;
+            let xd1V = +xd1.value, xd2V = +xd2.value;
+
+            let YA = modExp(a, xaV, qv);
+            let YB = modExp(a, xbV, qv);
+            let YD1 = modExp(a, xd1V, qv);
+            let YD2 = modExp(a, xd2V, qv);
+
+            let K1 = modExp(YD2, xaV, qv);
+            let K2 = modExp(YD1, xbV, qv);
+            let K3 = modExp(YA, xd2V, qv);
+            let K4 = modExp(YB, xd1V, qv);
+
+            dhOutput.innerHTML = `
+<b> Public Key Formulas:</b><br>
+YA = α<sup>XA</sup> mod q = ${YA}<br>
+YB = α<sup>XB</sup> mod q = ${YB}<br><br>
+
+<b> Attacker Fake Keys:</b><br>
+YD1 = α<sup>XD1</sup> mod q = ${YD1}<br>
+YD2 = α<sup>XD2</sup> mod q = ${YD2}<br><br>
+
+<b> Victim Shared Keys:</b><br>
+K1 = (YD2)<sup>XA</sup> mod q = ${K1}<br>
+K2 = (YD1)<sup>XB</sup> mod q = ${K2}<br><br>
+
+<b> Attacker Derived Keys:</b><br>
+K3 = (YA)<sup>XD2</sup> mod q = ${K3}<br>
+K4 = (YB)<sup>XD1</sup> mod q = ${K4}
+`;
+        }
+    </script>
+
+</body>
+
+</html>
